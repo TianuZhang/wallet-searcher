@@ -20,6 +20,7 @@ OpenAI API 分析层（ai_analyzer.py）
 
 - `wallet_reader.py`：校验地址并读取原生 ETH 余额。
 - `ai_analyzer.py`：获取余额后，请 OpenAI 用中文解释结果。
+- `token_reader.py`：读取标准 ERC-20 代币余额。
 - `requirements.txt`：Python 依赖。
 - `.env.example`：环境变量名称示例，不包含真实密钥。
 
@@ -61,6 +62,12 @@ python wallet_reader.py
 
 ```powershell
 python ai_analyzer.py
+```
+
+读取 ERC-20 代币余额（需要输入钱包地址和代币合约地址）：
+
+```powershell
+python token_reader.py
 ```
 
 ## 当前范围与下一步
