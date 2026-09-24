@@ -5,6 +5,7 @@ import os
 
 from openai import OpenAI
 
+from token_reader import get_token_balance
 from wallet_reader import get_eth_balance
 
 
@@ -25,18 +26,44 @@ TOOLS = [
             "additionalProperties": False,
         },
         "strict": True,
-    }
+    },
+    {
+        "type": "function",
+        "name": "get_token_balance",
+        "description": "Read a standard ERC-20 token balance using its Ethereum contract address.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "wallet_address": {
+                    "type": "string",
+                    "description": "An Ethereum address beginning with 0x.",
+                },
+                "token_address": {
+                    "type": "string",
+                    "description": "The ERC-20 token contract address on Ethereum mainnet.",
+                },
+            },
+            "required": ["wallet_address", "token_address"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
 ]
 
 
 def run_tool(name: str, arguments: dict) -> str:
     """Execute only the explicitly allowed, read-only Python tools."""
-    if name != "get_eth_balance":
-        return json.dumps({"error": f"Tool not allowed: {name}"})
-
     try:
-        balance = get_eth_balance(arguments["wallet_address"])
-        return json.dumps({"eth_balance": str(balance), "unit": "ETH"})
+        if name == "get_eth_balance":
+            balance = get_eth_balance(arguments["wallet_address"])
+            return json.dumps({"eth_balance": str(balance), "unit": "ETH"})
+        if name == "get_token_balance":
+            return json.dumps(
+                get_token_balance(
+                    arguments["wallet_address"], arguments["token_address"]
+                )
+            )
+        return json.dumps({"error": f"Tool not allowed: {name}"})
     except (KeyError, ValueError, ConnectionError) as error:
         return json.dumps({"error": str(error)})
 
@@ -50,8 +77,9 @@ def ask_agent(question: str) -> str:
     response = client.responses.create(
         model=os.getenv("OPENAI_MODEL", "gpt-5"),
         instructions=(
-            "You are a Web3 teaching assistant. Use get_eth_balance when a user "
-            "asks about an Ethereum address's ETH balance. Explain results in Chinese. "
+            "You are a Web3 teaching assistant. Use get_eth_balance for ETH balances "
+            "and get_token_balance for ERC-20 balances when both addresses are provided. "
+            "Explain results in Chinese. "
             "Never claim address ownership, request private keys, or give investment advice."
         ),
         input=question,
